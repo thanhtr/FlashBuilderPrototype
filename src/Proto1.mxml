@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   applicationComplete="Update()"
+			   width="800" height="450">
+	<fx:Script>
+		<![CDATA[
+			import flash.events.Event;
+			import spark.components.Application;
+			
+			var i:int = 0;
+			var score:int = 0;
+			var mouseDisabled:Boolean = false;
+			
+			//Function called when user clicks on background image or any image on scene
+			private function MouseClick():void
+			{
+				if(!mouseDisabled)
+					player.addEventListener(Event.ENTER_FRAME,BalloonRise);
+			}
+			
+			//Run when program run
+			private function Update():void
+			{
+				player.addEventListener(Event.ENTER_FRAME, BalloonFall);
+				player.addEventListener(Event.ENTER_FRAME, CollisionDetect);
+				NeedleSpawn();
+				needle.addEventListener(Event.ENTER_FRAME, NeedleFly);				
+			}
+			
+			//Randomly initialize obstacles position
+			private function NeedleSpawn():void
+			{
+				needle.x = 800;
+				needle.y = ((Math.random() * 2) + 1)*100 -40;
+			}
+			
+			//Falling of player's character (balloon)
+			//At a certain point it will be seen as "touch the ground" and lose 
+			private function BalloonFall(event:Event):void
+			{
+				player.y += 5;
+				player.validateNow();
+				if (player.y > 330)
+				{
+					GameOver();
+				}
+			}
+			
+			//If mouse clicked, balloon will rise for certain amount of time
+			//Limit upper boundary
+			private function BalloonRise(event:Event):void
+			{
+				player.y -= 10;
+				player.validateNow();
+				i++;
+				if( i > 30)
+				{
+					player.removeEventListener(Event.ENTER_FRAME, BalloonRise);
+					i = 0;
+				}	
+				if(player.y < 0) 
+					player.y = 0;
+				
+			}
+			
+			//Obstacle moving towards player
+			//Score increase by each obstacle going off the windows canvas
+			private function NeedleFly(event:Event):void
+			{
+				needle.x -= 20;
+				if(needle.x < 0)
+				{
+					needle.x = 800;
+					NeedleSpawn();
+					score ++;
+				}
+				highScore.text = "Score: " + score.toString();
+			}
+			
+			//Detect collision, leads to gameover
+			private function CollisionDetect(event:Event):void
+			{
+				if(player.hitTestObject(needle))
+				{
+					GameOver();
+				}
+			}
+			
+			//Gameover state, disable all function and show end game text
+			private function GameOver():void
+			{
+				mouseDisabled = true;
+				player.removeEventListener(Event.ENTER_FRAME, BalloonRise);
+				player.removeEventListener(Event.ENTER_FRAME, BalloonFall);
+				player.removeEventListener(Event.ENTER_FRAME, CollisionDetect);
+				needle.removeEventListener(Event.ENTER_FRAME, NeedleFly);
+				gameOverScore.visible = true;
+				restart.visible = true;
+			}
+			
+			//Reset game similarly to the beginning when player click "restart"
+			private function Init():void
+			{
+				player.x = 10;
+				player.y = 60;
+				score = 0;
+				gameOverScore.visible = false;
+				restart.visible = false;
+				mouseDisabled = false;
+				Update();
+			}
+
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<!--Putting image and label into scene-->
+	<s:Image id = "bg" source = "@Embed('image/BG.jpg')" click= "MouseClick()"/>
+	<s:Image id = "player" source = "@Embed('image/Balloon.png')" x = "10" y = "60" width="50" height="75" click= "MouseClick()"/>
+	<s:Image id = "needle" source = "@Embed('image/needle.png')" click= "MouseClick()"/>
+	<s:Label id = "highScore" x = "10" y = "420" color="red" fontSize="20"/>
+	<s:Label id = "gameOverScore" text = "GAMEOVER!!" x = "200" y = "250" color = "yellow" fontSize= "40" visible="false"/>
+	<s:Label id = "restart" text = "RESTART? CLICK HERE" x = "200" y = "300" color = "yellow" fontSize= "40" visible="false" click = "Init()"/>
+	
+</s:Application>
